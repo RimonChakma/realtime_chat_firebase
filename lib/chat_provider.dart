@@ -28,16 +28,16 @@ class ChatProvider extends ChangeNotifier {
           {"senderId": currentUser.uid,
             "receiverId": receiverId,
             "messageBody": message,
-            "timeStamp": FieldValue.serverTimestamp()
-      }
+            "timestamp": FieldValue.serverTimestamp() // small s
+          }
       );
 
       await _firestore.collection("chats").doc(chatId).set(
-        {
-          "users":[currentUser.uid,receiverId],
-          "lastMessage":message,
-          "timestamp":FieldValue.serverTimestamp(),
-        },SetOptions(merge: true)
+          {
+            "users":[currentUser.uid,receiverId],
+            "lastMessage":message,
+            "timestamp":FieldValue.serverTimestamp(),
+          },SetOptions(merge: true)
       );
     }
   }

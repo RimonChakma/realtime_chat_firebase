@@ -33,92 +33,89 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<Map<String, dynamic>> _fetchChatData(String chatId) async {
-    final chatDoc = await FirebaseFirestore.instance
-        .collection("chats")
-        .doc(chatId)
-        .get();
-    final chatData = chatDoc.data();
-    final users = chatData!["users"] as List<dynamic>;
-    final receivedId = users.firstWhere((id) => id != loggedInUser!.uid);
-    final userDoc = await FirebaseFirestore.instance
-        .collection("users")
-        .doc(receivedId)
-        .get();
-    final userData = userDoc.data();
-    return {
-      "chatId": chatId,
-      "lastMessage": chatData['lastMessage'] ?? "",
-      "timestamp": chatData["timestamp"]?.toData() ?? DateTime.now(),
-      "userData": userData,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final chatProvider = Provider.of<ChatProvider>(context);
-    return PopScope(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: Text("chats"),
-          actions: [
-            IconButton(
-              onPressed: () {
-                _auth.signOut();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
-              },
-              icon: Icon(Icons.logout),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: chatProvider.getChats(loggedInUser!.uid),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                  final chatDocs = snapshot.data!.docs;
-                  return FutureBuilder<List<Map<String, dynamic>>>(
-                    future: Future.wait(
-                      chatDocs.map((chatDoc) => _fetchChatData(chatDoc.id)),
-                    ),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                      final chatDataList = snapshot.data!;
-                      return ListView.builder(
-                        itemCount: chatDataList.length,
-                        itemBuilder: (context, index) {
-                          final chatData = chatDataList[index];
-                          return ChatTile(
-                            chatId: chatData["chatId"],
-                            lastName: chatData["lastMessage"],
-                            timeStamp: chatData["timestamp"],
-                            receiverData: chatData["userData"],
-                          );
-                        },
-                      );
-                    },
+
+    if (loggedInUser == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Chats"),
+        actions: [
+          IconButton(
+            onPressed: () {
+              _auth.signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: chatProvider.getChats(loggedInUser!.uid),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final chatDocs = snapshot.data!.docs;
+          if (chatDocs.isEmpty) {
+            return const Center(child: Text("No Chats Yet"));
+          }
+
+          return ListView.builder(
+            itemCount: chatDocs.length,
+            itemBuilder: (context, index) {
+              final chatDoc = chatDocs[index];
+              final chatData = chatDoc.data() as Map<String, dynamic>;
+              final users = chatData['users'] as List<dynamic>;
+              final receivedId = users.firstWhere((id) => id != loggedInUser!.uid);
+
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(receivedId)
+                    .get(),
+                builder: (context, userSnap) {
+                  if (!userSnap.hasData) return const SizedBox();
+                  final userData = userSnap.data!.data() as Map<String, dynamic>;
+
+                  return ChatTile(
+                    chatId: chatDoc.id,
+                    lastName: chatData['lastMessage'] ?? "",
+                    timeStamp: ((chatData['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now())
+                        .hour
+                        .toString() +
+                        ":" +
+                        ((chatData['timestamp'] as Timestamp?)?.toDate()?.minute.toString().padLeft(2,'0') ?? "00"),
+                    receiverName: userData['name'] ?? "Unknown",
+                    receiverId: receivedId, // ID পাঠানো হচ্ছে
                   );
                 },
-              ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Color(0xFF3876FD),
-          foregroundColor: Colors.white,
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => SearchScreen(),));
-        },child: Icon(Icons.search_rounded),),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF3876FD),
+        foregroundColor: Colors.white,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SearchScreen()),
+          );
+        },
+        child: const Icon(Icons.search_rounded),
       ),
     );
   }

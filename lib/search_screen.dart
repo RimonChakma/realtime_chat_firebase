@@ -1,4 +1,5 @@
 import 'package:chat_app/chat_provider.dart';
+import 'package:chat_app/chat_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -63,7 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Search Users"),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.blue,
       ),
       body: Column(
         children: [
@@ -85,8 +86,8 @@ class _SearchScreenState extends State<SearchScreen> {
               stream: searchUsersStream(),
               builder: (context, snapshot) {
                 if (searchQuery.isEmpty) {
-                  // খালি হলে কিছু দেখাবে না
-                  return const Center(child: Text("Start typing to search users"));
+                  return const Center(
+                      child: Text("Start typing to search users"));
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -114,18 +115,40 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: Text(
                             name.isNotEmpty ? name[0].toUpperCase() : "?",
                             style: const TextStyle(
-                                color: Colors.white, fontWeight: FontWeight.bold),
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                         title: Text(
                           name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
                           email,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        onTap: () async {
+                          final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                          final userId = uid;
+
+                          String chatId = await chatProvider.createChatRoom(userId);
+
+                          if (chatId != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatScreen(
+                                  chatId: chatId,
+                                  receivedId: userId,
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Unable to create chat room")),
+                            );
+                          }
+                        },
                       ),
                     );
                   }
