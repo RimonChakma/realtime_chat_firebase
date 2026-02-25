@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../chat_screen.dart';
+
 class ChatTile extends StatelessWidget {
   final String chatId;
   final String lastName;
