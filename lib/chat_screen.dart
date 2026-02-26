@@ -239,7 +239,7 @@ class MessageBubble extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                  vertical: 10, horizontal: 20),
+                  vertical: 8, horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -252,7 +252,7 @@ class MessageBubble extends StatelessWidget {
                       fontSize: 15,
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 4),
                   Text(
                     "${messageTime.hour}:${messageTime.minute}",
                     style: TextStyle(

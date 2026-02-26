@@ -34,7 +34,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void handleSearch(String query) {
     setState(() {
-      searchQuery = query.trim().toLowerCase(); // lowercase & trim
+      searchQuery = query.trim().toLowerCase();
     });
   }
 
@@ -64,21 +64,26 @@ class _SearchScreenState extends State<SearchScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Search Users"),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.white,
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: TextField(
+              onChanged: handleSearch,
+              style: const TextStyle(fontSize: 16),
               decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[200],
                 hintText: "Search users...",
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              onChanged: handleSearch,
             ),
           ),
           Expanded(
@@ -127,13 +132,22 @@ class _SearchScreenState extends State<SearchScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        onTap: () async {
-                          final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-                          final userId = uid;
+                          onTap: () async {
+                            final chatProvider =
+                            Provider.of<ChatProvider>(context, listen: false);
 
-                          String chatId = await chatProvider.createChatRoom(userId);
+                            final userId = uid;
+                            String? existingChatId =
+                            await chatProvider.getChatRoom(userId);
 
-                          if (chatId != null) {
+                            String chatId;
+
+                            if (existingChatId != null) {
+                              chatId = existingChatId;
+                            } else {
+                              chatId = await chatProvider.createChatRoom(userId);
+                            }
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -143,12 +157,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 ),
                               ),
                             );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Unable to create chat room")),
-                            );
                           }
-                        },
                       ),
                     );
                   }
